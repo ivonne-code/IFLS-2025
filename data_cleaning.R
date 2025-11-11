@@ -208,8 +208,52 @@ reg_dt <- reg_dt %>%
   ))
 
 ###CHANGE EDUCATION LEVEL TO YEARS OF EDUCATION VARIABLE 
+extract_code <- function(x) {
+  if (is.numeric(x)) {
+    return(x)
+  } else if (is.character(x)) {
+    code <- sub(":.*", "", x)  # Get number before ":"
+    return(as.numeric(code))
+  } else {
+    return(NA)
+  }
+}
 
-table(comp_dt$w5_d)
+comb_dt$w5_dl06_code <- sapply(comb_dt$w5_dl06, extract_code)
+
+map_to_years <- function(code) {
+  case_when(
+    code == 2  ~ 6,   # Elementary
+    code == 3  ~ 9,   # Junior high general
+    code == 4  ~ 9,   # Junior high vocational
+    code == 5  ~ 12,  # Senior high general
+    code == 6  ~ 12,  # Senior high vocational
+    code == 11 ~ 9,   # Adult education A
+    code == 12 ~ 12,  # Adult education B
+    code == 13 ~ 16,  # Open university
+    code == 14 ~ 12,  # Pesantren
+    code == 15 ~ 12,  # Adult education C
+    code == 17 ~ 12,  # School for Disabled
+    code == 60 ~ 15,  # College (D1-D3)
+    code == 61 ~ 16,  # Bachelor (S1)
+    code == 62 ~ 18,  # Master (S2)
+    code == 63 ~ 21,  # Doctoral (S3)
+    code == 72 ~ 6,   # Islamic Elementary
+    code == 73 ~ 9,   # Islamic Junior High
+    code == 74 ~ 12,  # Islamic Senior High
+    code == 90 ~ 0,   # Kindergarten
+    TRUE ~ NA_real_   # Other/Missing/Don't Know
+  )
+}
+
+comb_dt$w4_edu_years <- map_to_years(comb_dt$w4_dl06)
+comb_dt$w5_edu_years <- map_to_years(comb_dt$w5_dl06_code)
+
+reg_dt <- reg_dt %>%
+  mutate(edu4 = comb_dt$w4_edu_years,
+         edu5 = comb_dt$w5_edu_years)
+
+comb_dt <- comb_dt %>% select(-w5_dl06_code)
 
 
 ###REMOVE ANY ROWS WITH N/A VARIABLES
@@ -223,6 +267,7 @@ reg_dt <- reg_dt %>%
 
 ##check proportion of data remaining post N/A removal
 perc = 14054/21381
+
 
 
 
